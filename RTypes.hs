@@ -1,3 +1,14 @@
+{-
+       File      :      RTypes.hs
+       Copyright : (c) Elena Badillo Goicoechea, 05/30/19, 
+       Contains ...
+       References (concepts and basic implementation):
+          - https://samcgardner.github.io/2018/10/06/linear-regression-in-haskell.html
+          - http://mccormickml.com/2014/03/04/gradient-descent-derivation/
+          - https://www.classes.cs.uchicago.edu/archive/2018/fall/12100-1/pa/pa5/index.html
+-}
+
+
 module RTypes where
 
 import qualified Data.Vector as DV 
@@ -20,7 +31,7 @@ data Model = Model {origdataSet :: DataSet, dataSet :: DataSet, predvars :: [Int
   	  3. Try everything X
   	  4. Generalize obs to multivar using vectors X
   	  5. R2 X
-  	  6. Data Model type def and methods
-  	  7. Test set division
-  	  5. IO: from xls to Training Set
-  	  5. Implement tasks from PA5 --}
+  	  6. Data Model type def and methods X
+  	  7. Implement tasks from PA5 X 
+  	  8. Test set division
+  	  9. IO: from xls to Training Set}

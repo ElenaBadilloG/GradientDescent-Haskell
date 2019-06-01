@@ -1,3 +1,14 @@
+{-
+       File      :      RegModels.hs
+       Copyright : (c) Elena Badillo Goicoechea, 05/30/19, 
+       Contains ...
+       References (concepts and basic implementation):
+          - https://samcgardner.github.io/2018/10/06/linear-regression-in-haskell.html
+          - http://mccormickml.com/2014/03/04/gradient-descent-derivation/
+          - https://www.classes.cs.uchicago.edu/archive/2018/fall/12100-1/pa/pa5/index.html
+-}
+
+
 module Main where
 
 import RTypes
