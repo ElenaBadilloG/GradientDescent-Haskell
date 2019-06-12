@@ -2,7 +2,7 @@
 
 # Linear Regression Model Estimation and Selection
 
-##### Elena Badillo Goicoechea, June 10th, 2019
+##### Elena Badillo Goicoechea, June 10, 2019
 
 ## Descripton
 
