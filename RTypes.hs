@@ -1,7 +1,7 @@
 {-
        File      :      RTypes.hs
        Copyright : (c) Elena Badillo Goicoechea, 06/11/19, 
-       Contains Types Signatures for Coefs, Record, DataSet, and Model
+       Contains type signatures for Coefs, Record, DataSet, and Model
 -}
 
 
