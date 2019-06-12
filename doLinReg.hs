@@ -1,11 +1,8 @@
 {-
        File      :      DoLinReg.hs
-       Copyright : (c) Elena Badillo Goicoechea, 05/30/19, 
-       Contains ...
-       References (concepts and basic implementation):
-          - https://samcgardner.github.io/2018/10/06/linear-regression-in-haskell.html
-          - http://mccormickml.com/2014/03/04/gradient-descent-derivation/
-          - https://www.classes.cs.uchicago.edu/archive/2018/fall/12100-1/pa/pa5/index.html
+       Copyright : (c) Elena Badillo Goicoechea, 06/11/19, 
+       Contains a purely functional programming implementation of multivariate linear model 
+       estimation using gradient descent.
 -}
 
 module DoLinReg where
@@ -15,7 +12,7 @@ import qualified Data.Vector as DV
 import RTypes
 
 -- Finds coefficients for linear regression using gradient descent
-linearReg :: Coefs -> Float -> DataSet -> Int -> Coefs
+linearReg :: Coefs -> Float -> DataSet (Record Float) -> Int -> Coefs
 linearReg coefs alpha dataset iterations
   | iterations == 0 = coefs
   | otherwise =
@@ -23,7 +20,7 @@ linearReg coefs alpha dataset iterations
      in linearReg betas alpha dataset (iterations - 1)
 
 -- Calculate new values for regression coefficients (Backward, Forward Step)
-newBetas :: Coefs -> Float -> DataSet -> Coefs
+newBetas :: Coefs -> Float -> DataSet (Record Float) -> Coefs
 newBetas betas lrate dataset =
   let deltas = map (getbDelta betas) observs
       beta1Deltas = predDeltas deltas observs
@@ -35,43 +32,28 @@ newBetas betas lrate dataset =
     Coefs (t0, t1) = betas
     DataSet observs preds = dataset
 
+{-- Updates regression coefficients --}
 newcoef :: Float -> [Float] -> [Float] -> [Float]
 newcoef lrate predDeltas c = zipWith (-) c (map (*lrate) predDeltas)
 
 -- Calculates the difference between h(x) and y: intercept delta
-getbDelta :: Coefs -> Obs -> Float
+getbDelta :: Coefs -> Record Float -> Float
 getbDelta betas observ = (beta0 + (vdot betas1 x))  - y
   where
     Coefs (beta0, betas1) = betas
     -- Coefs v
-    Obs (y, x) = observ
+    Record (y, x) = observ
 
 -- Calculates the partials for each beta1 
-predDeltas :: [Float] -> [Obs] -> [Float]
+predDeltas :: [Float] -> [Record Float] -> [Float]
 predDeltas deltas observs =
-  let xs = map (\(Obs (_, x)) -> x) observs
+  let xs = map (\(Record (_, x)) -> x) observs
       xs' = map (DV.toList) xs
       zipped = zip deltas xs' --zipped = zip deltas xs
    in aggreg (map delTup zipped)
 
-{--djRsq :: Coefs -> Float -> TrainingSet -> Int -> Float
-adjRsq coefs alpha dataset iterations = r2 - (1 - r2) * (k / (n - k - 1)) where
-  coefs' = linearReg coefs alpha dataset iterations
-  yfit = map (\x -> beta0 + (vdot betas1 x)) xs
-  diff = map (^2) $ zipWith (-) ys yfit
-  var_diff = avg diff
-  var_y = avg y'
-  y' = map (^2) $ zipWith (-) ys (replicate (length ys) (avg ys))
-  xs =  map (\(Obs (_, x)) -> x) observs
-  ys =  map (\(Obs (y, _)) -> y) observs
-  n = genericLength ys
-  k = genericLength  (DV.toList betas1)
-  r2 = 1-(var_diff/var_y)
-
-  TrainingSet observs = dataset
-  Coefs (beta0, betas1) = coefs'--}
-
-adjRsq :: Coefs -> DataSet -> Float
+{-- Computes adjusted r-squared statitsic --}
+adjRsq :: Coefs -> DataSet (Record Float) -> Float
 adjRsq betas dataset = r2 - (1 - r2) * (k / (n - k - 1)) where
 
   yfit = map (\x -> beta0 + (vdot betas1 x)) xs
@@ -79,8 +61,8 @@ adjRsq betas dataset = r2 - (1 - r2) * (k / (n - k - 1)) where
   var_diff = avg diff
   var_y = avg y'
   y' = map (^2) $ zipWith (-) ys (replicate (length ys) (avg ys))
-  xs =  map (\(Obs (_, x)) -> x) observs
-  ys =  map (\(Obs (y, _)) -> y) observs
+  xs =  map (\(Record (_, x)) -> x) observs
+  ys =  map (\(Record (y, _)) -> y) observs
   n = genericLength ys
   k = genericLength  (DV.toList betas1)
   r2 = 1-(var_diff/var_y)

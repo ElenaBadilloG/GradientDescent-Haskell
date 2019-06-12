@@ -1,30 +1,94 @@
 {-
-       File      :      RegModels.hs
-       Copyright : (c) Elena Badillo Goicoechea, 05/30/19, 
-       Contains ...
-       References (concepts and basic implementation):
-          - https://samcgardner.github.io/2018/10/06/linear-regression-in-haskell.html
-          - http://mccormickml.com/2014/03/04/gradient-descent-derivation/
-          - https://www.classes.cs.uchicago.edu/archive/2018/fall/12100-1/pa/pa5/index.html
+       Copyright : (c) Elena Badillo Goicoechea, 06/11/19, 
+       Contains I/O component of program, executing the following steps:
+
+            1. Take args provided by the user [ i) json filepath, ii) no. of iterations, iii) task ]
+            2. Read file and load data
+            3. Parse data into appropriate data type
+            4. Execute required task
+            5. Print results
+          
 -}
 
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE PackageImports #-}
 
 module Main where
 
 import RTypes
-import RegModels
+import RegModels as RM
+import System.Environment 
 import qualified Data.Vector as DV 
+import Control.Applicative
+import Control.Monad
+import Text.JSON.Generic
+import Data.List.Split (splitOn)
+import Data.Char
+import Data.List (sortBy)
+import "regex-pcre" Text.Regex.PCRE
 
-main :: IO ()
+
 main = do
-  let initbetas = Coefs (0, DV.fromList [0, 0, 0, 0])
-  let alpha = 0.3
-  let r2init = 0
-  let dpredvars = [0,1,2,3]
-  let dataset = DataSet [Obs (2, DV.fromList [1 ,2, 4, 1]), Obs (4, DV.fromList [2, 3, 2, 1]), Obs (6, DV.fromList [3, 2, 4, 1])] dpredvars 
-  let origdataset = dataset
-  let mpredvars = dpredvars
-  let iters = 500
-  let mod0 = Model origdataset dataset mpredvars initbetas r2init alpha
+  [f, it, task, sc] <- getArgs
+  fcontents  <- readFile f
 
-  print $ "BEST K-LENGTH LINEAR MODEL FOR EACH K = 1,..., |ALL PREDICTORS| : " ++ (show $ bestMods origdataset dataset iters) ---modReg mod0 iterations --adjustDeltas [1..3] [Obs (2, DV.fromList [1 ,2]), Obs (4, DV.fromList [2, 2]), Obs (6, DV.fromList [3, 2])]
+  let iters = read it :: Int
+  let scale = read sc :: Float
+  let processed = processFile fcontents scale -- tuple: (no. predictors, dataset)
+  let dataset = snd processed
+  let initbetas = Coefs (0, DV.fromList (replicate (fst processed ) 0))
+  let alpha = 0.1
+  let r2init = 0
+  let origdataset = dataset
+
+  doTask task origdataset dataset iters   
+
+{-- Cleans and parses content from a read file --}
+processFile :: String -> Float -> (Int, DataSet (Record Float) )
+processFile conts scale = (len, DataSet (map (lst2rec) doublst) dpredvars) where
+
+  doublst = init (map (\xs -> [read x :: Float | x <- xs]) numlst)
+  numlst = map concat (map (map line2lst) nums')
+  dpredvars = [0..(length (last doublst) - 2)]
+  nums' = map (splitOn "    ") nums
+  nums =  map getNums recs
+  recs = map processLine splitt
+  splitt = splitOn "}" clean
+  clean = removeChars ",\n.?!-;\"\'" conts
+  len = (length (last doublst) - 2)
+
+{-- Performs the algorithm specified in the users input args and prints reuslts to screen --}
+doTask :: String -> DataSet (Record Float) -> DataSet (Record Float) -> Int -> IO()
+doTask task origdataset dataset iters
+  | task == "univar" = putStrLn $ "\n" ++ "BEST UNIVARIATE LINEAR MODEL: " ++ "\n \n" ++ (show $ RM.univars origdataset dataset iters) 
+  | task == "allvar" = putStrLn $ "\n" ++ "FULL LINEAR MODEL: " ++ "\n \n" ++ (show $ RM.allvars origdataset dataset iters) 
+  | task == "bivar" = putStrLn $ "\n" ++ "BEST BIVARIATE LINEAR MODEL: " ++ "\n \n" ++ (show $ RM.bivars origdataset dataset iters) 
+  | task == "bestK" =  putStrLn $ "\n" ++ "BEST K-LENGTH LINEAR MODEL FOR EACH K = 1,..., |ALL PREDICTORS|: " ++ "\n \n" ++ (show $ RM.bestMods origdataset dataset iters)
+  | otherwise = putStrLn $ "\n" ++ "BEST MODEL: " ++ "\n \n" ++ (show $ bestM origdataset dataset iters) 
+
+{-- Remove preddefined characters from string --}
+removeChars :: String -> String -> String
+removeChars chars xs = [ x | x <- xs, not (x `elem` chars ) ]
+
+{-- Remove letter and punctuation characters --}
+getNums xs = map (\x -> if not (x `elem` ['a'..'z']++[':', ',']++['A'..'Z']) then x else ' ') xs
+
+{-- Parses a line into readable form --}
+processLine :: String -> String
+processLine r1 = "{" ++ (removeChars "[] " (show r3)) ++ "}" where
+
+  r2 = removeChars ",{}[[]\n.?!-;\'\'" r1
+  r3 = splitOn "   " r2 
+
+{-- Converts a string to a list of all the integers contained in it --}
+line2lst :: String -> [String]
+line2lst xs = let stringResult = xs =~ "[0-9]+" :: AllTextMatches [] String in
+              getAllTextMatches stringResult
+
+{-- Converts a list of integers into a Record data type --}
+lst2rec :: [Float]-> Record Float
+lst2rec ds = Record (y, x) where
+  y = last ds
+  x = DV.fromList (init ds)
+
+  
