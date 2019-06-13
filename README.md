@@ -11,9 +11,9 @@ estimation using: i) gradient descent,  ii) greedy best model selection
 
 The pipeline of this project consists of the following steps:
 
-	1. Take args provided by the user [ i) json filepath, ii) no. of iterations, iii) task, iv) scaling favtor]
+	1. Take args provided by the user [ i) json file path, ii) no. of iterations, iii) task, iv) scaling factor]
 	2. Read file and load data
-	3. Parse data into appropriate data type
+	3. Parse data into appropriate data types
 	4. Execute required task
 	5. Print results
 
